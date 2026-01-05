@@ -1,11 +1,15 @@
 spring:
   application:
     name: zy-picture-backend
+  servlet:
+    multipart:
+      max-file-size: 10MB
   # session 配置
   session:
     store-type: redis
     # session 30 天过期
     timeout: 2592000
+
   # mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
