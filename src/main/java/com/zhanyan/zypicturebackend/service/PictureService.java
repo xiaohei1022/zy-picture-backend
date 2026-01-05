@@ -2,9 +2,7 @@ package com.zhanyan.zypicturebackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.zhanyan.zypicturebackend.model.dto.picture.PictureQueryRequest;
-import com.zhanyan.zypicturebackend.model.dto.picture.PictureUploadRequest;
-import com.zhanyan.zypicturebackend.model.dto.picture.PictureVO;
+import com.zhanyan.zypicturebackend.model.dto.picture.*;
 import com.zhanyan.zypicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zhanyan.zypicturebackend.model.entity.User;
@@ -22,12 +20,12 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile
+     * @param inputSource
      * @param pictureUploadRequest
      * @param loginUser
      * @return
      */
-    PictureVO uploadPicture(MultipartFile multipartFile,
+    PictureVO uploadPicture(Object inputSource,
                             PictureUploadRequest pictureUploadRequest,
                             User loginUser);
 
@@ -63,4 +61,29 @@ public interface PictureService extends IService<Picture> {
      * @return
      */
     PictureVO getPictureVO(Picture picture, HttpServletRequest request);
+
+    /**
+     * 图片审核
+     *
+     * @param pictureReviewRequest
+     * @param loginUser
+     */
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+    /**
+     * 填充审核参数
+     *
+     * @param picture
+     * @param loginUser
+     */
+    void fillReviewParams(Picture picture, User loginUser);
+
+    /**
+     * 批量抓取和创建图片
+     *
+     * @param pictureUploadByBatchRequest
+     * @param loginUser
+     * @return 成功创建的图片数
+     */
+    int uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser);
 }
