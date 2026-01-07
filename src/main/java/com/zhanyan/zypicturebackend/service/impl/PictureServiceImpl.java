@@ -9,7 +9,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zhanyan.zypicturebackend.exception.BusinessException;
 import com.zhanyan.zypicturebackend.exception.ErrorCode;
 import com.zhanyan.zypicturebackend.exception.ThrowUtils;
+import com.zhanyan.zypicturebackend.manager.CosManager;
 import com.zhanyan.zypicturebackend.manager.FileManager;
+import com.zhanyan.zypicturebackend.manager.cache.CacheManager;
 import com.zhanyan.zypicturebackend.manager.upload.FilePictureUpload;
 import com.zhanyan.zypicturebackend.manager.upload.PictureUploadTemplate;
 import com.zhanyan.zypicturebackend.manager.upload.UrlPictureUpload;
@@ -18,6 +20,7 @@ import com.zhanyan.zypicturebackend.model.dto.picture.*;
 import com.zhanyan.zypicturebackend.model.entity.Picture;
 import com.zhanyan.zypicturebackend.model.entity.User;
 import com.zhanyan.zypicturebackend.model.enums.PictureReviewStatusEnum;
+import com.zhanyan.zypicturebackend.model.vo.PictureVO;
 import com.zhanyan.zypicturebackend.model.vo.UserVO;
 import com.zhanyan.zypicturebackend.service.PictureService;
 import com.zhanyan.zypicturebackend.mapper.PictureMapper;
@@ -28,6 +31,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -50,9 +55,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     implements PictureService{
 
     @Resource
-    private FileManager fileManager;
-
-    @Resource
     private UserService userService;
 
     @Resource
@@ -60,6 +62,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private UrlPictureUpload urlPictureUpload;
+
+    @Resource
+    private CosManager cosManager;
+
 
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -72,8 +78,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             pictureId = pictureUploadRequest.getId();
         }
         // 如果是更新图片，需要校验图片是否存在
+        Picture oldPicture = new Picture();
         if (pictureId != null) {
-            Picture oldPicture = this.getById(pictureId);
+            oldPicture = this.getById(pictureId);
             ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
             // 仅本人或管理员可编辑
             if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
@@ -102,6 +109,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicHeight(uploadPictureResult.getPicHeight());
         picture.setPicScale(uploadPictureResult.getPicScale());
         picture.setPicFormat(uploadPictureResult.getPicFormat());
+        picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         picture.setUserId(loginUser.getId());
         // 补充审核参数
         fillReviewParams(picture, loginUser);
@@ -112,6 +120,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             picture.setEditTime(new Date());
         }
         boolean result = this.saveOrUpdate(picture);
+        // 删除修改前的 图片
+        if (oldPicture.getUrl() != null) {
+            this.clearPictureCos(oldPicture);
+        }
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
         return PictureVO.objToVo(picture);
     }
@@ -325,6 +337,25 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
         }
         return uploadCount;
+    }
+
+    @Async
+    @Override
+    public void clearPictureCos(Picture picture) {
+        // 判断图片是否多方引用，如果引用次数大于1，则不删除
+        String url = picture.getUrl();
+        long count = this.lambdaQuery()
+                .eq(Picture::getUrl, url)
+                .count();
+        if (count > 1) {
+            return;
+        }
+        cosManager.deleteObject(url);
+        // 删除缩略图
+        String thumbnailUrl = picture.getThumbnailUrl();
+        if (StrUtil.isNotBlank(thumbnailUrl)) {
+            cosManager.deleteObject(thumbnailUrl);
+        }
     }
 }
 

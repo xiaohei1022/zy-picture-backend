@@ -1,16 +1,16 @@
 package com.zhanyan.zypicturebackend.manager;
 
+import cn.hutool.core.io.FileUtil;
 import com.qcloud.cos.COSClient;
-import com.qcloud.cos.model.COSObject;
-import com.qcloud.cos.model.GetObjectRequest;
-import com.qcloud.cos.model.PutObjectRequest;
-import com.qcloud.cos.model.PutObjectResult;
+import com.qcloud.cos.model.*;
 import com.qcloud.cos.model.ciModel.persistence.PicOperations;
 import com.zhanyan.zypicturebackend.config.CosClientConfig;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class CosManager {
@@ -44,6 +44,16 @@ public class CosManager {
     }
 
     /**
+     * 删除图片
+     *
+     * @param key 唯一键
+     */
+    public void deleteObject(String key) {
+        DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(cosClientConfig.getBucket(), key);
+        cosClient.deleteObject(deleteObjectRequest);
+    }
+
+    /**
      * 上传对象（附带图片信息）
      *
      * @param key  唯一键
@@ -56,7 +66,28 @@ public class CosManager {
         PicOperations picOperations = new PicOperations();
         // 1 表示返回原图信息
         picOperations.setIsPicInfo(1);
+        String fileKey = FileUtil.mainName(key) + ".webp";
+        // 图片格式转化
+        List<PicOperations.Rule> rules = new ArrayList<>();
+        // 图片压缩
+        PicOperations.Rule rule = new PicOperations.Rule();
+        rule.setFileId(fileKey);
+        rule.setRule("imageMogr2/format/webp");
+        rule.setBucket(cosClientConfig.getBucket());
+        rules.add(rule);
+
+        // 图片大小大于2M 才进行图片缩略处理
+        if (file.length() > 2 * 1024) {
+            // 图片缩略
+            PicOperations.Rule thumbnailRule = new PicOperations.Rule();
+            String thumbnailKey = FileUtil.mainName(key) + "_thumbnail" + FileUtil.getSuffix(key);
+            thumbnailRule.setFileId(thumbnailKey);
+            thumbnailRule.setRule(String.format("imageMogr2/thumbnail/%sx%s>", 256, 256));
+            thumbnailRule.setBucket(cosClientConfig.getBucket());
+            rules.add(thumbnailRule);
+        }
         // 构造处理参数
+        picOperations.setRules(rules);
         putObjectRequest.setPicOperations(picOperations);
         return cosClient.putObject(putObjectRequest);
     }

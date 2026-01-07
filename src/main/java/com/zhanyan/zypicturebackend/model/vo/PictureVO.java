@@ -1,8 +1,7 @@
-package com.zhanyan.zypicturebackend.model.dto.picture;
+package com.zhanyan.zypicturebackend.model.vo;
 
 import cn.hutool.json.JSONUtil;
 import com.zhanyan.zypicturebackend.model.entity.Picture;
-import com.zhanyan.zypicturebackend.model.vo.UserVO;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
@@ -92,6 +91,11 @@ public class PictureVO implements Serializable {
      * 创建用户信息  
      */  
     private UserVO user;
+
+    /**
+     * 缩略图 url
+     */
+    private String thumbnailUrl;
   
     private static final long serialVersionUID = 1L;  
   

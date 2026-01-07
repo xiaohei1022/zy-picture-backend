@@ -5,7 +5,6 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpStatus;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.http.Method;
-import com.zhanyan.zypicturebackend.model.vo.UserVO;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
@@ -18,7 +17,6 @@ import com.zhanyan.zypicturebackend.exception.BusinessException;
 import com.zhanyan.zypicturebackend.exception.ErrorCode;
 import com.zhanyan.zypicturebackend.exception.ThrowUtils;
 import com.zhanyan.zypicturebackend.model.dto.file.UploadPictureResult;
-import com.zhanyan.zypicturebackend.model.dto.picture.PictureVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

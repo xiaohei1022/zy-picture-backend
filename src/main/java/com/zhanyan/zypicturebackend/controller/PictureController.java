@@ -1,5 +1,7 @@
 package com.zhanyan.zypicturebackend.controller;
 
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zhanyan.zypicturebackend.annotation.AuthCheck;
@@ -10,12 +12,15 @@ import com.zhanyan.zypicturebackend.constant.UserConstant;
 import com.zhanyan.zypicturebackend.exception.BusinessException;
 import com.zhanyan.zypicturebackend.exception.ErrorCode;
 import com.zhanyan.zypicturebackend.exception.ThrowUtils;
+import com.zhanyan.zypicturebackend.manager.cache.CacheManager;
 import com.zhanyan.zypicturebackend.model.dto.picture.*;
 import com.zhanyan.zypicturebackend.model.entity.Picture;
 import com.zhanyan.zypicturebackend.model.entity.User;
 import com.zhanyan.zypicturebackend.model.enums.PictureReviewStatusEnum;
+import com.zhanyan.zypicturebackend.model.vo.PictureVO;
 import com.zhanyan.zypicturebackend.service.PictureService;
 import com.zhanyan.zypicturebackend.service.UserService;
+import com.zhanyan.zypicturebackend.utli.RedisKeyUtil;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,11 +41,14 @@ public class PictureController {
     @Resource
     private PictureService pictureService;
 
+    @Resource
+    private CacheManager cacheManager;
+
     /**
      * 上传图片（可重新上传）
      */
     @PostMapping("/upload")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+//    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
@@ -94,6 +102,8 @@ public class PictureController {
         }
         // 操作数据库
         boolean result = pictureService.removeById(id);
+        // 删除存储对象cos
+        pictureService.clearPictureCos(oldPicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -182,6 +192,40 @@ public class PictureController {
         // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
+        // 获取封装类
+        return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
+    }
+
+    /**
+     * 分页获取图片列表（封装类）
+     */
+    @PostMapping("/list/page/vo/cache")
+    public BaseResponse<Page<PictureVO>> listPictureVOByPageCache(@RequestBody PictureQueryRequest pictureQueryRequest,
+                                                             HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        // 查询缓存
+        String jsonStr = JSONUtil.toJsonStr(pictureQueryRequest);
+        String hasKey = DigestUtil.md5Hex(jsonStr);
+        String redisKey = RedisKeyUtil.getPictureCacheKey("listPictureVOByPageCache", hasKey);
+        Object cacheValueObj = cacheManager.get(redisKey);
+        if (cacheValueObj != null) {
+            String cacheValue = cacheValueObj.toString();
+            Page<PictureVO> cachePage = JSONUtil.toBean(cacheValue, Page.class);
+            return ResultUtils.success(cachePage);
+        }
+        // 查询数据库
+        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
+                pictureService.getQueryWrapper(pictureQueryRequest));
+        // 存入缓存
+        Page<PictureVO> pictureVOPage = pictureService.getPictureVOPage(picturePage, request);
+        String jsonValue = JSONUtil.toJsonStr(pictureVOPage);
+        // 设置缓存时间 5-10 分钟随机过期，防止缓存雪崩
+        int cacheExpireTime = 300 + RandomUtil.randomInt(0, 300);
+        cacheManager.set(redisKey, jsonValue, cacheExpireTime);
         // 获取封装类
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
     }

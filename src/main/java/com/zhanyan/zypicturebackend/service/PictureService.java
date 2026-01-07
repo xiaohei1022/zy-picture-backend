@@ -6,7 +6,7 @@ import com.zhanyan.zypicturebackend.model.dto.picture.*;
 import com.zhanyan.zypicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zhanyan.zypicturebackend.model.entity.User;
-import org.springframework.web.multipart.MultipartFile;
+import com.zhanyan.zypicturebackend.model.vo.PictureVO;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -86,4 +86,11 @@ public interface PictureService extends IService<Picture> {
      * @return 成功创建的图片数
      */
     int uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser);
+
+    /**
+     * 删除图片
+     *
+     * @param picture
+     */
+    void clearPictureCos(Picture  picture);
 }
