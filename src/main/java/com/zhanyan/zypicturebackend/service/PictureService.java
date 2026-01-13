@@ -9,6 +9,7 @@ import com.zhanyan.zypicturebackend.model.entity.User;
 import com.zhanyan.zypicturebackend.model.vo.PictureVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author xiaoh
@@ -125,4 +126,22 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser
      */
     void updatePicture(PictureUpdateRequest pictureUpdateRequest, User loginUser);
+
+    /**
+     * 根据颜色搜索图片
+     *
+     * @param spaceId
+     * @param color
+     * @param loginUser
+     * @return
+     */
+    List<PictureVO> searchPictureByColor(Long spaceId, String color, User loginUser);
+
+    /**
+     * 批量编辑图片
+     *
+     * @param pictureEditByBatchRequest
+     * @param loginUser
+     */
+    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
 }

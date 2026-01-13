@@ -63,7 +63,7 @@ public abstract class PictureUploadTemplate {
                     thumbnailCIObject = objectList.get(1);
                 }
                 // 封装压缩图返回结果
-                return buildResult(originFilename, ciObject, thumbnailCIObject);
+                return buildResultWebp(originFilename, ciObject, thumbnailCIObject, uploadPath, imageInfo);
             }
             // 5. 封装返回结果  
             return buildResult(originFilename, file, uploadPath, imageInfo);  
@@ -94,7 +94,7 @@ public abstract class PictureUploadTemplate {
     /**  
      * 封装返回结果  
      */  
-    private UploadPictureResult buildResult(String originFilename, File file, String uploadPath, ImageInfo imageInfo) {  
+    private UploadPictureResult buildResult(String originFilename, File file, String uploadPath, ImageInfo imageInfo) {
         UploadPictureResult uploadPictureResult = new UploadPictureResult();  
         int picWidth = imageInfo.getWidth();  
         int picHeight = imageInfo.getHeight();  
@@ -105,14 +105,16 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicScale(picScale);  
         uploadPictureResult.setPicFormat(imageInfo.getFormat());  
         uploadPictureResult.setPicSize(FileUtil.size(file));  
-        uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + uploadPath);  
+        uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + uploadPath);
+        uploadPictureResult.setOrgUrl(cosClientConfig.getHost() + "/" + uploadPath);
+        uploadPictureResult.setPicColor(imageInfo.getAve());
         return uploadPictureResult;  
     }
 
     /**
      * 封装返回结果  (webp格式)
      */
-    private UploadPictureResult buildResult(String originFilename, CIObject ciObject, CIObject thumbnailCIObject) {
+    private UploadPictureResult buildResultWebp(String originFilename, CIObject ciObject, CIObject thumbnailCIObject, String uploadPath, ImageInfo imageInfo) {
         UploadPictureResult uploadPictureResult = new UploadPictureResult();
         int picWidth = ciObject.getWidth();
         int picHeight = ciObject.getHeight();
@@ -125,6 +127,8 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicSize(ciObject.getSize().longValue());
         uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
         uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnailCIObject.getKey());
+        uploadPictureResult.setOrgUrl(cosClientConfig.getHost() + "/" + uploadPath);
+        uploadPictureResult.setPicColor(imageInfo.getAve());
         return uploadPictureResult;
     }
   

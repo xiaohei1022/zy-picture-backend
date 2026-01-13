@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
@@ -97,4 +98,14 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      * 是否只查询 spaceId 为 null 的数据
      */
     private boolean nullSpaceId;
+
+    /**
+     * 开始时间
+     */
+    private Date startTime;
+
+     /**
+     * 结束时间
+     */
+     private Date endTime;
 }

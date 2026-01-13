@@ -8,8 +8,13 @@ public class UploadPictureResult {
     /**  
      * 图片地址  
      */  
-    private String url;  
-  
+    private String url;
+
+    /**
+     * 原图 url
+     */
+    private String orgUrl;
+
     /**  
      * 图片名称  
      */  
@@ -44,5 +49,9 @@ public class UploadPictureResult {
      * 缩略图 url
      */
     private String thumbnailUrl;
-  
+
+    /**
+     * 图片主色调
+     */
+    private String picColor;
 }

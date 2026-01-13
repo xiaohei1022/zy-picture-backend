@@ -127,4 +127,14 @@ public class Picture implements Serializable {
      * 缩略图 url
      */
     private String thumbnailUrl;
+
+    /**
+     * 原图 url
+     */
+    private String orgUrl;
+
+    /**
+     * 图片主色调
+     */
+    private String picColor;
 }
