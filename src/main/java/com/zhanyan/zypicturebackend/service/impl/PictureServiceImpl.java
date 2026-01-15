@@ -513,7 +513,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 补充审核参数
         fillReviewParams(picture, loginUser);
         // 删除历史空间额度
-        deletePicture(oldPicture.getId(), loginUser);
+        //deletePicture(oldPicture.getId(), loginUser);
         // 操作数据库
         boolean result = this.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
